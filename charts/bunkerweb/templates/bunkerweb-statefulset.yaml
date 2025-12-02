@@ -29,6 +29,30 @@ spec:
         {{- end }}
         bunkerweb.io/component: "bunkerweb"
     spec:
+    {{- with .Values.bunkerweb.affinity }}
+      affinity:
+      {{- toYaml . | nindent 8}}
+    {{- end }}
+      {{- if not .Values.bunkerweb.affinity}}
+      affinity:
+      {{- end }}
+      {{- if eq .Values.bunkerweb.podAntiAffinityPreset "hard" }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  bunkerweb.io/component: "bunkerweb"
+      {{- else if eq .Values.bunkerweb.podAntiAffinityPreset "soft" }}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  bunkerweb.io/component: "bunkerweb"
+      {{- end }}
       containers:
         - name: bunkerweb
           image: {{ .Values.bunkerweb.repository }}:{{ .Values.bunkerweb.tag }}
@@ -42,6 +66,8 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           ports:
+            - containerPort: 5000
+              name: bwapi
             - containerPort: 8080
             - containerPort: 8443
             {{- if and .Values.bunkerweb.usePrometheusExporter }}
@@ -49,10 +75,13 @@ spec:
               name: metrics
             {{- end }}
           env:
+            # Mandatory for k8s integration
             - name: KUBERNETES_MODE
               value: "yes"
+            # DNS resolver
             - name: DNS_RESOLVERS
               value: "{{ .Values.settings.misc.dnsResolvers }}"
+            # Internal subnet(s) + localhost
             - name: API_WHITELIST_IP
               value: "{{ .Values.settings.misc.apiWhitelistIp }}"
             {{- if .Values.ui.logs.enabled }}
