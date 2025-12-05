@@ -272,7 +272,7 @@ bunkerweb:
   replicas: 1
 
   # Container image configuration
-  repository: bunkerity/bunkerweb
+  repository: ghcr.io/bunkerity/bunkerweb
   tag: 1.6.6
   pullPolicy: Always
 
@@ -444,7 +444,7 @@ bunkerweb:
 
 scheduler:
   # Container image configuration
-  repository: bunkerity/bunkerweb-scheduler
+  repository: ghcr.io/bunkerity/bunkerweb-scheduler
   tag: 1.6.6
   pullPolicy: Always
 
@@ -949,7 +949,7 @@ controller:
   enabled: true
 
   # Container image configuration
-  repository: bunkerity/bunkerweb-autoconf
+  repository: ghcr.io/bunkerity/bunkerweb-autoconf
   tag: 1.6.6
   pullPolicy: Always
 
@@ -1020,7 +1020,7 @@ ui:
   enabled: true
 
   # Container image configuration
-  repository: bunkerity/bunkerweb-ui
+  repository: ghcr.io/bunkerity/bunkerweb-ui
   tag: 1.6.6
   pullPolicy: Always
 
@@ -1072,7 +1072,7 @@ ui:
     syslogAddress: ""
 
     # Syslog-ng container for log collection
-    repository: balabit/syslog-ng
+    repository: docker.io/balabit/syslog-ng
     pullPolicy: Always
     tag: 4.8.0
 
@@ -1113,7 +1113,7 @@ api:
   enabled: true
 
   # Container image configuration
-  repository: bunkerity/bunkerweb-api
+  repository: ghcr.io/bunkerity/bunkerweb-api
   tag: 1.6.6
   pullPolicy: Always
 
@@ -1175,7 +1175,7 @@ mariadb:
   enabled: true
 
   # Container image configuration
-  repository: mariadb
+  repository: docker.io/mariadb
   tag: "11"
   pullPolicy: Always
 
@@ -1239,7 +1239,7 @@ redis:
   enabled: true
 
   # Container image configuration
-  repository: redis
+  repository: docker.io/redis
   tag: 7-alpine
   pullPolicy: Always
   # Persistent storage configuration
@@ -1314,7 +1314,7 @@ prometheus:
   enabled: false
 
   # Container image configuration
-  repository: prom/prometheus
+  repository: docker.io/prom/prometheus
   pullPolicy: Always
   tag: v3.3.1
 
@@ -1356,7 +1356,7 @@ grafana:
   enabled: false
 
   # Container image configuration
-  repository: grafana/grafana
+  repository: docker.io/grafana/grafana
   tag: latest
   pullPolicy: IfNotPresent
 
