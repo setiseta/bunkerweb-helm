@@ -4,7 +4,23 @@
 # This file contains all configurable values for the BunkerWeb Helm chart.
 # For more information about BunkerWeb configuration, visit:
 # https://docs.bunkerweb.io/
-
+#
+# =============================================================================
+# MINIMAL DEPLOYMENT EXAMPLE
+# =============================================================================
+# This file contains a deployment example for minimal setup. With use of external services
+# It includes :
+# - BunkerWeb deployed as a Deployment with 1 replica
+# - External MariaDB database
+# - External Redis cache
+# - External Grafana & Prometheus for monitoring
+# It involves below components:
+# - BunkerWeb Core instance
+# - BunkerWeb Scheduler
+# - BunkerWeb Ingress Controller
+# - BunkerWeb UI
+# https://docs.bunkerweb.io/
+#
 # =============================================================================
 # GLOBAL CONFIGURATION
 # =============================================================================
@@ -79,8 +95,15 @@ settings:
   # ----- GENERAL CONFIGURATION -----
   misc:
     # Database connection URI (auto-generated if using internal MariaDB)
-    # Format: mysql+pymysql://user:password@host:port/database
-    databaseUri: ""
+    # Examples for different providers:
+    # PostgreSQL: "postgresql://username:password@postgres.example.com:5432/bunkerweb"
+    # MySQL/MariaDB: "mysql+pymysql://username:password@mysql.example.com:3306/bunkerweb"
+    # Cloud SQL: "mysql+pymysql://username:password@127.0.0.1:3306/bunkerweb" (with Cloud SQL Proxy)
+    databaseUri: "fill-in-your-external-mariadb-uri-here-or-use-settings.existingSecret"
+    # Additional arguments for MariaDB
+    # Example: args: ["--character-set-server=utf8mb4"]
+    # args:
+    #   - "--max-allowed-packet=67108864"
 
     # DNS resolvers for BunkerWeb (space-separated)
     # Default uses CoreDNS service in kube-system namespace
@@ -97,7 +120,7 @@ settings:
     useRedis: "yes"
 
     # Redis hostname (auto-configured if using internal Redis)
-    redisHost: ""
+    redisHost: "fill-in-your-external-redis-host"
 
     # Redis authentication (leave empty if not using auth)
     redisUsername: ""
@@ -106,7 +129,7 @@ settings:
   # ----- WEB UI CONFIGURATION -----
   ui:
     # Enable the setup wizard on first launch
-    wizard: true
+    wizard: false
 
     # Ingress configuration for UI access
     ingress:
@@ -265,7 +288,7 @@ bunkerweb:
 
   # Use host ports for direct traffic (only for DaemonSet)
   # Allows binding to ports 80/443 on each node
-  hostPorts: true
+  hostPorts: false
 
   # Number of replicas (for Deployment & StatefulSet kind)
   # Minimum 2 for high availability and PodDisruptionBudget
@@ -345,7 +368,7 @@ bunkerweb:
   service:
     # Use headless service (clusterIP: None) for service discovery
     # If false, creates a ClusterIP service with BWAPI port 5000
-    headless: true
+    headless: false
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -428,7 +451,7 @@ bunkerweb:
   pdb:
     # Enable creation of Pod Disruption Budget
     # Make sure you have at least 2 replicas if enabled
-    create: true
+    create: false
 
     # Minimum number/percentage of pods that must remain available
     # Example: minAvailable: 1 or minAvailable: "50%"
@@ -489,7 +512,7 @@ scheduler:
   proLicenseKey: ""
   # Enable Prometheus metrics exporter and creates a service for it
   # Requires BunkerWeb PRO license
-  usePrometheusExporter: false
+  usePrometheusExporter: true
   # ==================================================== #
 
   # BunkerWeb feature configuration
@@ -936,10 +959,10 @@ scheduler:
     exec:
       command:
         - /usr/share/bunkerweb/helpers/healthcheck-scheduler.sh
-    initialDelaySeconds: 90
+    initialDelaySeconds: 180
     periodSeconds: 10
-    timeoutSeconds: 1
-    failureThreshold: 3
+    timeoutSeconds: 10
+    failureThreshold: 5
 
 # =============================================================================
 # CONTROLLER COMPONENT
@@ -1114,7 +1137,7 @@ ui:
 
 api:
   # Enable the external API
-  enabled: true
+  enabled: false
 
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-api
@@ -1177,61 +1200,7 @@ api:
 mariadb:
   # Enable internal MariaDB instance
   # Set to false to use external database
-  enabled: true
-
-  # Container image configuration
-  repository: docker.io/mariadb
-  tag: "11"
-  pullPolicy: Always
-
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
-
-  # Persistent storage configuration
-  persistence:
-    # Storage size for database
-    size: 5Gi
-
-    # Storage class for database persistence
-    # Leave empty for default storage class
-    # Example: "fast-ssd", "standard", "gp2"
-    storageClass: ""
-
-  # Database configuration
-  config:
-    # Generate random root password
-    randomRootPassword: "1"
-
-    # BunkerWeb database name
-    database: "db"
-
-    # BunkerWeb database user
-    user: "bunkerweb"
-
-    # BunkerWeb database password
-    # SECURITY: Change this in production or use existingSecret
-    password: "changeme"
-
-  # Additional arguments for MariaDB
-  # Example: args: ["--character-set-server=utf8mb4"]
-  args:
-    - "--max-allowed-packet=67108864"
-
-  # Resource requests and limits
-  # RECOMMENDED: Uncomment and adjust for production
-  # resources:
-  #   requests:
-  #     cpu: "250m"
-  #     memory: "512Mi"
-  #   limits:
-  #     cpu: "500m"
-  #     memory: "1024Mi"
+  enabled: false
 
 # =============================================================================
 # REDIS COMPONENT
@@ -1241,57 +1210,7 @@ mariadb:
 redis:
   # Enable internal Redis instance
   # Set to false to use external Redis
-  enabled: true
-
-  # Container image configuration
-  repository: docker.io/redis
-  tag: 7-alpine
-  pullPolicy: Always
-  # Persistent storage configuration
-  persistence:
-    # Storage size for Redis data
-    size: 1Gi
-
-    # Storage class for Redis persistence
-    # Leave empty for default storage class
-    storageClass: ""
-
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
-
-  # Use custom Redis configuration file
-  useConfigFile: false
-
-  # Redis configuration
-  config:
-    # Redis authentication password
-    # SECURITY: Change this in production or use existingSecret
-    password: "changeme"
-
-    # Custom Redis configuration
-    # Applied when useConfigFile is true
-    file: |
-      appendonly yes
-      save ""
-      loglevel verbose
-      maxmemory 512mb
-      maxmemory-policy allkeys-lru
-
-  # Resource requests and limits
-  # RECOMMENDED: Uncomment and adjust for production
-  # resources:
-  #   requests:
-  #     cpu: "250m"
-  #     memory: "512Mi"
-  #   limits:
-  #     cpu: "500m"
-  #     memory: "1024Mi"
+  enabled: false
 
 # =============================================================================
 # INGRESS CLASS
@@ -1318,39 +1237,6 @@ prometheus:
   # Requires BunkerWeb PRO for advanced metrics
   enabled: false
 
-  # Container image configuration
-  repository: docker.io/prom/prometheus
-  pullPolicy: Always
-  tag: v3.3.1
-
-  # Number of Prometheus replicas
-  replicas: 1
-
-  # Additional pod annotations
-  podAnnotations: {}
-
-  # Additional pod labels
-  podLabels: {}
-
-  # Security context for Prometheus
-  securityContext:
-    fsGroup: 65534
-
-  # Persistent storage configuration
-  persistence:
-    # Enable persistent storage
-    enabled: true
-
-    # Storage size for metrics data
-    size: 8Gi
-
-    # Storage class for metrics persistence
-    storageClass: ""
-
-    # Access modes for the persistent volume
-    accessModes:
-      - ReadWriteOnce
-
 # =============================================================================
 # MONITORING - GRAFANA
 # =============================================================================
@@ -1359,91 +1245,6 @@ prometheus:
 grafana:
   # Enable Grafana for dashboards
   enabled: false
-
-  # Container image configuration
-  repository: docker.io/grafana/grafana
-  tag: latest
-  pullPolicy: IfNotPresent
-
-  # Number of Grafana replicas
-  replicas: 1
-
-  # Admin user configuration
-  adminUser: admin
-
-  # Admin password (leave empty to generate random)
-  # SECURITY: Set a strong password or use existingSecret
-  adminPassword: ""
-
-  # Use existing secret for admin password
-  # Secret should contain 'admin-password' key
-  # existingSecret: "grafana-admin-secret"
-  existingSecret: ""
-
-  # Additional environment variables (missing from values.yaml)
-  extraEnvs: []
-
-  # Service configuration
-  service:
-    type: ClusterIP
-    port: 3000
-
-  # Ingress configuration for external access
-  ingress:
-    enabled: false
-    # ingressClassName: "bunkerweb"
-    # serverName: "grafana.example.com"
-    # serverPath: "/"
-    # tlsSecretName: "grafana-tls"
-    # annotations:
-    #   bunkerweb.io/AUTO_LETS_ENCRYPT: "yes"
-
-  # Persistent storage configuration
-  persistence:
-    enabled: false
-    size: 10Gi
-
-    # Storage class for dashboard persistence
-    storageClass: ""
-
-    # Access modes for the persistent volume
-    accessModes:
-      - ReadWriteOnce
-
-    # Additional annotations for the PVC
-    # annotations: {}
-
-  # Prometheus data source configuration
-  # Automatically configured when Prometheus is enabled
-  prometheusDatasource:
-    name: Prometheus
-    type: prometheus
-    url: 'http://prometheus-{{ include "bunkerweb.fullname" . }}.{{ include "bunkerweb.namespace" . }}.svc:9090'
-    access: proxy
-    isDefault: true
-
-  # Additional pod annotations
-  podAnnotations: {}
-
-  # Additional pod labels
-  podLabels: {}
-
-  # Security context for Grafana
-  securityContext: {}
-    # fsGroup: 472
-    # runAsUser: 472
-    # runAsGroup: 472
-
-  # Additional environment variables
-  # extraEnvs: []
-
-  # Sidecar configuration for dashboard provisioning
-  # sidecar:
-  #   dashboards:
-  #     enabled: false
-  #     label: grafana_dashboard
-  #     labelValue: "1"
-  #     folder: /tmp/dashboards
 
 # =============================================================================
 # NETWORK SECURITY

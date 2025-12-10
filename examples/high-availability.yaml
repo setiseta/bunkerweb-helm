@@ -4,15 +4,32 @@
 # This file contains all configurable values for the BunkerWeb Helm chart.
 # For more information about BunkerWeb configuration, visit:
 # https://docs.bunkerweb.io/
+#
+# =============================================================================
+# HIGH AVAILABILITY DEPLOYMENT EXAMPLE
+# =============================================================================
+# This file contains a deployment example for high availability.
+# It includes :
+# - BunkerWeb deployed as a Deployment with multiple replicas
+# - Horizontal Pod Autoscaler (HPA) for automatic scaling
+# - PodDisruptionBudget to ensure minimum availability during disruptions
+# - Topology spread constraints for better pod distribution
+# - Resource requests and limits for performance optimization
+# - Readiness and liveness probes for better health monitoring
+# It involves below components:
+# - BunkerWeb Core instance
+# - BunkerWeb Scheduler
+# - BunkerWeb API
+# - BunkerWeb Ingress Controller
+# - BunkerWeb UI
+# - Internal MariaDB database (could easily be replaced with external DB)
+# - Internal Redis cache (could easily be replaced with external Redis)
+# https://docs.bunkerweb.io/
 
 # =============================================================================
 # GLOBAL CONFIGURATION
 # =============================================================================
 # These settings apply to all components unless overridden
-
-# Global image pull secrets for private registries
-# Example: imagePullSecrets: [{"name": "myregistry-secret"}]
-imagePullSecrets: []
 
 # Override the chart name (default: chart name)
 nameOverride: ""
@@ -33,7 +50,21 @@ tolerations: []
 
 # Topology spread constraints for better pod distribution
 # Example: topologySpreadConstraints: [{"maxSkew": 1, "topologyKey": "kubernetes.io/hostname", "whenUnsatisfiable": "DoNotSchedule"}]
-topologySpreadConstraints: []
+topologySpreadConstraints:
+  # 1. Spread between zones if possible
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: bunkerweb
+  # 2. Spread between hosts in the same zone
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app: bunkerweb
 
 # =============================================================================
 # BUNKERWEB CORE SETTINGS
@@ -57,7 +88,7 @@ settings:
   #   - api-token         : API Bearer token
   #   - api-username      : API username, also require api-password
   #   - api-password      : API password, also require api-username
-  existingSecret: ""
+  existingSecret: "bunkerweb-settings-secret.yaml"
 
   # ----- KUBERNETES INTEGRATION -----
   kubernetes:
@@ -86,7 +117,7 @@ settings:
     # Default uses CoreDNS service in kube-system namespace
     dnsResolvers: "coredns.kube-system.svc.cluster.local"
 
-    # IP ranges allowed to access BunkerWeb API (space-separated CIDR blocks)
+    # IP ranges allowed to access BunkerWeb Internal API (space-separated CIDR blocks)
     # Includes common Kubernetes and private network ranges
     apiWhitelistIp: "127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16"
 
@@ -97,7 +128,7 @@ settings:
     useRedis: "yes"
 
     # Redis hostname (auto-configured if using internal Redis)
-    redisHost: ""
+    redisHost: "redis-bunkerweb.bunkerweb.svc.cluster.local"
 
     # Redis authentication (leave empty if not using auth)
     redisUsername: ""
@@ -106,7 +137,7 @@ settings:
   # ----- WEB UI CONFIGURATION -----
   ui:
     # Enable the setup wizard on first launch
-    wizard: true
+    wizard: false
 
     # Ingress configuration for UI access
     ingress:
@@ -145,6 +176,7 @@ settings:
     # TOTP secrets for two-factor authentication
     totpSecrets: ""
 
+  # Requires BunkerWeb external API to be enabled
   api:
     # Authentication settings
     # https://docs.bunkerweb.io/latest/api/#authentication
@@ -152,7 +184,7 @@ settings:
     # API Bearer Token
     useBearerToken:
       # If enable, it will use settings.existingSecret
-      fromExistingSecret: false
+      fromExistingSecret: true
       # If not using existingSecret, set the token here
       token: ""
     # Username and Password
@@ -265,33 +297,32 @@ bunkerweb:
 
   # Use host ports for direct traffic (only for DaemonSet)
   # Allows binding to ports 80/443 on each node
-  hostPorts: true
+  hostPorts: false
 
   # Number of replicas (for Deployment & StatefulSet kind)
   # Minimum 2 for high availability and PodDisruptionBudget
-  replicas: 1
+  replicas: 3
 
   # Container image configuration
-  # Also available at ghcr.io/bunkerity/bunkerweb
   repository: docker.io/bunkerity/bunkerweb
   tag: 1.6.6
   pullPolicy: Always
 
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
-  # resources:
-  #   requests:
-  #     cpu: "2000m"
-  #     memory: "4096Mi"
-  #   limits:
-  #     cpu: "4000m"
-  #     memory: "8192Mi"
+  resources:
+    requests:
+      cpu: "900m"
+      memory: "4096Mi"
+    limits:
+      cpu: "2000m"
+      memory: "8192Mi"
 
   # Horizontal Pod Autoscaler (HPA) configuration
   # Make sure to set resources.requests for CPU and/or memory
   hpa:
     # Enable HPA for bunkerweb component
-    enabled: false
+    enabled: true
     # Target kind for scaling (Deployment or StatefulSet)
     targetKind: "Deployment"
     # Optional name override for the target resource
@@ -345,19 +376,7 @@ bunkerweb:
   service:
     # Use headless service (clusterIP: None) for service discovery
     # If false, creates a ClusterIP service with BWAPI port 5000
-    headless: true
-
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
-
-  # Pod affinity rules
-  affinity: {}
+    headless: false
 
   # Anti-affinity preset: "soft" or "hard"
   # soft: Prefers not to schedule pods on same node
@@ -432,11 +451,11 @@ bunkerweb:
 
     # Minimum number/percentage of pods that must remain available
     # Example: minAvailable: 1 or minAvailable: "50%"
-    minAvailable: ""
+    minAvailable: "1"
 
     # Maximum number/percentage of pods that can be unavailable
     # Example: maxUnavailable: 1 or maxUnavailable: "25%"
-    maxUnavailable: ""
+    maxUnavailable: "2"
 
 # =============================================================================
 # SCHEDULER COMPONENT
@@ -445,29 +464,20 @@ bunkerweb:
 
 scheduler:
   # Container image configuration
-  # Also available at ghcr.io/bunkerity/bunkerweb-scheduler
   repository: docker.io/bunkerity/bunkerweb-scheduler
   tag: 1.6.6
   pullPolicy: Always
 
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
-
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
-  # resources:
-  #   requests:
-  #     cpu: "250m"
-  #     memory: "256Mi"
-  #   limits:
-  #     cpu: "500m"
-  #     memory: "512Mi"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    # Needs to handle bursts during configuration updates
+    limits:
+      cpu: "2000m"
+      memory: "1024Mi"
 
   # Additional pod annotations
   podAnnotations: {}
@@ -936,10 +946,10 @@ scheduler:
     exec:
       command:
         - /usr/share/bunkerweb/helpers/healthcheck-scheduler.sh
-    initialDelaySeconds: 90
+    initialDelaySeconds: 180
     periodSeconds: 10
-    timeoutSeconds: 1
-    failureThreshold: 3
+    timeoutSeconds: 10
+    failureThreshold: 5
 
 # =============================================================================
 # CONTROLLER COMPONENT
@@ -951,29 +961,19 @@ controller:
   enabled: true
 
   # Container image configuration
-  # Also available at ghcr.io/bunkerity/bunkerweb-autoconf
   repository: docker.io/bunkerity/bunkerweb-autoconf
   tag: 1.6.6
   pullPolicy: Always
 
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
-
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
-  # resources:
-  #   requests:
-  #     cpu: "100m"
-  #     memory: "128Mi"
-  #   limits:
-  #     cpu: "250m"
-  #     memory: "256Mi"
+  resources:
+    requests:
+      cpu: "150m"
+      memory: "128Mi"
+    limits:
+      cpu: "400m"
+      memory: "256Mi"
 
   # Additional pod annotations
   podAnnotations: {}
@@ -998,7 +998,7 @@ controller:
     exec:
       command:
         - /usr/share/bunkerweb/helpers/healthcheck-autoconf.sh
-    initialDelaySeconds: 30
+    initialDelaySeconds: 60
     periodSeconds: 5
     timeoutSeconds: 1
     failureThreshold: 3
@@ -1008,7 +1008,7 @@ controller:
     exec:
       command:
         - /usr/share/bunkerweb/helpers/healthcheck-autoconf.sh
-    initialDelaySeconds: 30
+    initialDelaySeconds: 60
     periodSeconds: 1
     timeoutSeconds: 1
     failureThreshold: 3
@@ -1023,29 +1023,20 @@ ui:
   enabled: true
 
   # Container image configuration
-  # Also available at ghcr.io/bunkerity/bunkerweb-ui
   repository: docker.io/bunkerity/bunkerweb-ui
   tag: 1.6.6
   pullPolicy: Always
 
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
-
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
-  # resources:
-  #   requests:
-  #     cpu: "100m"
-  #     memory: "256Mi"
-  #   limits:
-  #     cpu: "250m"
-  #     memory: "512Mi"
+  resources:
+    requests:
+      cpu: "150m"
+      memory: "256Mi"
+    # Needs to handle UI operations and data processing bursts
+    limits:
+      cpu: "700m"
+      memory: "2048Mi"
 
   # Additional pod annotations
   podAnnotations: {}
@@ -1117,19 +1108,9 @@ api:
   enabled: true
 
   # Container image configuration
-  # Also available at ghcr.io/bunkerity/bunkerweb-api
   repository: docker.io/bunkerity/bunkerweb-api
   tag: 1.6.6
   pullPolicy: Always
-
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
 
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
@@ -1183,15 +1164,6 @@ mariadb:
   repository: docker.io/mariadb
   tag: "11"
   pullPolicy: Always
-
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
 
   # Persistent storage configuration
   persistence:
@@ -1255,15 +1227,6 @@ redis:
     # Storage class for Redis persistence
     # Leave empty for default storage class
     storageClass: ""
-
-  # Image pull secrets (overrides global setting)
-  imagePullSecrets: []
-
-  # Node selector (overrides global setting)
-  nodeSelector: {}
-
-  # Tolerations (overrides global setting)
-  tolerations: []
 
   # Use custom Redis configuration file
   useConfigFile: false
