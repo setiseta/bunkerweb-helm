@@ -8,13 +8,13 @@ This directory contains example configurations for common BunkerWeb deployment s
 
 ### Basic Configurations
 
+- [`bunkerweb-settings-secret.yaml`](bunkerweb-settings-secret.yaml) - Secret with all sensitive variables example
 - [`all-in-one.yaml`](all-in-one.yaml) - Full stack configuration for testing
-- [`production.yaml`](production.yaml) - Production-ready setup with persistence and external services
+- [`high-availability.yaml`](high-availability.yaml) - Production HA setup with multiple replicas
+- [`minimal.yaml`](minimal.yaml) - Production like stack, using external services for DB, Redis & monitoring
 
 ## Future Examples to come and open to contribution
 
-- [`high-availability.yaml`](high-availability.yaml) - HA setup with multiple replicas
-- [`external-database.yaml`](external-database.yaml) - Using external MariaDB and Redis
 - [`security-hardened.yaml`](security-hardened.yaml) - Security-focused configuration
 - [`multi-tenant.yaml`](multi-tenant.yaml) - Multi-tenant setup with namespace isolation
 - [`edge-deployment.yaml`](edge-deployment.yaml) - Edge/CDN-style deployment
@@ -32,18 +32,18 @@ Complete **test environment** configuration including:
 
 **Deployment:**
 ```bash
-helm install bunkerweb-aio ./charts/bunkerweb -f examples/all-in-one.yaml
+helm install bunkerweb-aio bunkerweb/bunkerweb -f examples/all-in-one.yaml
 ```
 
 **Access:**
-- BunkerWeb UI: `http://localhost:7000` (port-forward required)
-- Grafana: `http://localhost:3000` (admin/admin)
+- BunkerWeb UI: `http://localhost:7000` (port-forward required) or through ingress
+- Grafana: `http://localhost:3000` (admin/admin) or through ingress
 - Prometheus: `http://localhost:9090`
 
 ---
 
-### Production Configuration (External Services)
-**File:** `examples/production.yaml`
+### Minimal Production Configuration (External Services)
+**File:** `examples/minimal.yaml`
 
 **Production-ready** configuration using external services:
 - External database (RDS, Cloud SQL, etc.)
@@ -54,7 +54,7 @@ helm install bunkerweb-aio ./charts/bunkerweb -f examples/all-in-one.yaml
 
 **Deployment:**
 ```bash
-helm install bunkerweb ./charts/bunkerweb -f examples/production.yaml
+helm install bunkerweb bunkerweb/bunkerweb -f examples/minimal.yaml
 ```
 
 ---
@@ -114,7 +114,7 @@ kubectl logs -l bunkerweb.io/component=bunkerweb -f
 ### 2. Production Deployment
 ```bash
 # Copy and customize production config
-cp examples/production.yaml my-production-config.yaml
+cp examples/minimal.yaml my-production-config.yaml
 
 # Edit configuration with your settings
 nano my-production-config.yaml
