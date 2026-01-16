@@ -275,7 +275,7 @@ bunkerweb:
   # Also available at ghcr.io/bunkerity/bunkerweb
   repository: docker.io/bunkerity/bunkerweb
   tag: 1.6.7
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
@@ -448,7 +448,7 @@ scheduler:
   # Also available at ghcr.io/bunkerity/bunkerweb-scheduler
   repository: docker.io/bunkerity/bunkerweb-scheduler
   tag: 1.6.7
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -954,7 +954,7 @@ controller:
   # Also available at ghcr.io/bunkerity/bunkerweb-autoconf
   repository: docker.io/bunkerity/bunkerweb-autoconf
   tag: 1.6.7
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -1026,7 +1026,7 @@ ui:
   # Also available at ghcr.io/bunkerity/bunkerweb-ui
   repository: docker.io/bunkerity/bunkerweb-ui
   tag: 1.6.7
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -1078,7 +1078,7 @@ ui:
 
     # Syslog-ng container for log collection
     repository: docker.io/balabit/syslog-ng
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: 4.8.0
 
     # Persistent storage for logs
@@ -1087,6 +1087,20 @@ ui:
       # Storage class for log persistence
       # Leave empty for default storage class
       storageClass: ""
+
+    # Log rotation and cleanup configuration
+    # Periodically rotates UI logs and removes old log files
+    logrotate:
+      # Enable periodic log rotation for UI logs
+      enabled: true
+
+      # Cron schedule for the log rotation job
+      # Default: daily at 00:00
+      schedule: 0 0 * * *
+
+      # Number of days to keep UI log files
+      # Log files older than this value will be automatically removed
+      rotate: 2
 
   # Liveness probe configuration
   livenessProbe:
@@ -1121,7 +1135,7 @@ api:
   # Also available at ghcr.io/bunkerity/bunkerweb-api
   repository: docker.io/bunkerity/bunkerweb-api
   tag: 1.6.7
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -1183,10 +1197,16 @@ mariadb:
   # Container image configuration
   repository: docker.io/mariadb
   tag: "11"
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
+
+  # Deployment update strategy for MariaDB
+  # Default: RollingUpdate
+  # Uncomment and set to "Recreate" when using single-node block storage
+  # (e.g. EBS with ReadWriteOnce) to avoid volume attach conflicts
+  # strategy: Recreate
 
   # Node selector (overrides global setting)
   nodeSelector: {}
@@ -1247,7 +1267,7 @@ redis:
   # Container image configuration
   repository: docker.io/redis
   tag: 7-alpine
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Persistent storage configuration
   persistence:
     # Storage size for Redis data
@@ -1259,6 +1279,12 @@ redis:
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
+
+  # Deployment update strategy for Redis
+  # Default: RollingUpdate
+  # Uncomment and set to "Recreate" when using single-node block storage
+  # (e.g. EBS with ReadWriteOnce) to avoid volume attach conflicts
+  # strategy: Recreate
 
   # Node selector (overrides global setting)
   nodeSelector: {}
@@ -1321,7 +1347,7 @@ prometheus:
 
   # Container image configuration
   repository: docker.io/prom/prometheus
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: v3.3.1
 
   # Number of Prometheus replicas
