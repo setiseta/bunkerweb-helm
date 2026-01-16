@@ -10,6 +10,9 @@ spec:
   selector:
     matchLabels:
       {{- include "bunkerweb.selectorLabels" . | nindent 6 }}
+      bunkerweb.io/component: "mariadb"
+  strategy:
+    type: {{ default "RollingUpdate" .Values.mariadb.strategy }}
   template:
     metadata:
       labels:
@@ -51,6 +54,9 @@ spec:
               {{- else }}
               value: "{{ .Values.mariadb.config.password }}"
               {{- end }}
+          {{- if .Values.mariadb.extraEnvs }}
+            {{- toYaml .Values.mariadb.extraEnvs | nindent 12 }}
+          {{- end }}
           volumeMounts:
             - mountPath: "/var/lib/mysql"
               name: vol-db
