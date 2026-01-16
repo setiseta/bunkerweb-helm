@@ -68,6 +68,7 @@ spec:
             # Internal subnet(s) + localhost
             - name: API_WHITELIST_IP
               value: "{{ .Values.settings.misc.apiWhitelistIp }}"
+            {{- include "bunkerweb.redisEnv" . | nindent 12 }}
             {{- if .Values.ui.logs.enabled }}
             - name: ACCESS_LOG_1
               value: "syslog:server={{ include "bunkerweb.syslogAddress" . }},tag=bunkerweb_access"
