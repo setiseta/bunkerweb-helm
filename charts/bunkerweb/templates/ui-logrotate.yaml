@@ -1,4 +1,5 @@
 {{- if and .Values.ui.logs.enabled .Values.ui.logs.logrotate.enabled -}}
+{{- $domains := default (list) .Values.ui.logs.logrotate.domains -}}
 ---
 apiVersion: batch/v1
 kind: CronJob
@@ -50,9 +51,16 @@ spec:
             - /bin/sh
             - -c
             - |
+{{- if gt (len $domains) 0 }}
               apk add --no-cache logrotate
               logrotate -f /etc/logrotate.d/bunkerweb
-              find /var/log/bunkerweb/ -type f -name "*.log" -mtime +{{ .Values.ui.logs.logrotate.rotate | default "2" }} -delete
+              for f in {{- range $domains }} /var/log/bunkerweb/{{ . }}.log{{- end }}; do
+                find /var/log/bunkerweb/ -type f -name "$(basename "$f")" -mtime +{{ .Values.ui.logs.logrotate.rotate | default "2" }} -delete
+              done
+{{- else }}
+              echo "ui.logs.logrotate.domains is empty; skip logrotate."
+              exit 0
+{{- end }}
             volumeMounts:
             - name: config
               mountPath: /etc/logrotate.d/
@@ -77,7 +85,9 @@ metadata:
     {{- include "bunkerweb.labels" . | nindent 4 }}
 data:
   bunkerweb: |
-    /var/log/bunkerweb/*.log {
+{{- if gt (len $domains) 0 }}
+    {{- range $domains }}
+    /var/log/bunkerweb/{{ . }}.log{{- end }} {
       daily
       rotate {{ add (.Values.ui.logs.logrotate.rotate | default "2") 1 }}
       dateext
@@ -96,4 +106,5 @@ data:
         done
       endscript
     }
+{{- end }}
 {{- end }}
