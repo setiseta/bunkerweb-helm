@@ -1102,18 +1102,19 @@ ui:
       # Log files older than this value will be automatically removed
       rotate: 2
 
-      # Log file patterns to rotate.
+      # Log file patterns to rotate (required when logrotate.enabled=true).
       #
-      # REQUIRED: if this list is empty, no logrotate rules are generated and no logs will be rotated.
+      # This list is matched against log file names under /var/log/bunkerweb/.
+      # You can use glob patterns:
+      #   - *.com.log
       #
-      # Use wildcard patterns with an explicit TLD to keep the config short and clear:
-      #   - "*.com"
-      #   - "*.net"
-      #   - "*.co.kr"
-      #   - "*.example.com"
-      #
-      # Patterns are matched against UI log file names under /var/log/bunkerweb/ (e.g., "example.com.log").
-      domains: []
+      # If this list is empty, no logrotate rules are generated and nothing will be rotated.
+      files:
+      - bw-autoconf.log
+      - bw-scheduler.log
+      - bw-ui-access.log
+      - bw-ui.log
+      # - '*.com.log'
 
   # Liveness probe configuration
   livenessProbe:
