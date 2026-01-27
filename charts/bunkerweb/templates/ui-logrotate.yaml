@@ -52,12 +52,28 @@ spec:
             - -c
             - |
 {{- if gt (len $files) 0 }}
+              set -ex
               apk add --no-cache logrotate
+              echo "=== Files before logrotate ==="
+              ls -la /var/log/bunkerweb/
               logrotate -f /etc/logrotate.d/bunkerweb
-
-              {{- range $files }}
-              find /var/log/bunkerweb/ -type f -name "{{ . }}" -mtime +{{ $.Values.ui.logs.logrotate.rotate | default "2" }} -delete
-              {{- end }}
+              echo "=== Files after logrotate ==="
+              ls -la /var/log/bunkerweb/
+              echo "=== Deleting old log files ==="
+              echo "Current time: $(date)"
+              cutoff=$(date -d @$(($(date +%s) - {{ $.Values.ui.logs.logrotate.rotate | default "2" }} * 86400)) +%Y%m%d)
+              echo "Cutoff date: $cutoff (files before this will be deleted)"
+              for f in /var/log/bunkerweb/*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].log; do
+                if [ -f "$f" ]; then
+                  datepart=$(basename "$f" | grep -oE '[0-9]{8}\.log$' | cut -d. -f1)
+                  if [ -n "$datepart" ] && [ "$datepart" -lt "$cutoff" ]; then
+                    echo "Deleting: $f (date: $datepart < $cutoff)"
+                    rm -f "$f"
+                  fi
+                fi
+              done
+              echo "=== Files after cleanup ==="
+              ls -la /var/log/bunkerweb/
 {{- else }}
               echo "ui.logs.logrotate.files is empty; skip logrotate."
               exit 0
