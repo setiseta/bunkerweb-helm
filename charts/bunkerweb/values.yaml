@@ -108,25 +108,39 @@ settings:
     # Enable the setup wizard on first launch
     wizard: true
 
+    # if using new Gateway API integration instead of ingress resources
+    # HTTP routes configuration for UI access
+    httpRoutes:
+      # Enable HTTP routes for UI access
+      enabled: false
+      # GatewayClass name to use
+      gatewayClassName: ""
+      # Domain name for UI access
+      # Example: "bunkerweb-ui.example.com"
+      serverName: ""
+      # Path for UI access
+      serverPath: "/"
+      # Additional annotations for the httpRoute resource
+      # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
+      extraAnnotations: {}
+      # Secret name containing TLS certificate
+      # Leave empty to disable HTTPS
+      tlsSecretName: ""
+
     # Ingress configuration for UI access
     ingress:
       # Set to true to create an Ingress resource for the UI
       enabled: false
-
       # IngressClass name to use
       ingressClassName: ""
-
       # Domain name for UI access
       # Example: "bunkerweb-ui.example.com"
       serverName: ""
-
       # Path for UI access (usually "/")
       serverPath: "/"
-
       # Additional annotations for the Ingress resource
       # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
       extraAnnotations: {}
-
       # Secret name containing TLS certificate
       # Leave empty to disable HTTPS
       tlsSecretName: ""
@@ -198,25 +212,39 @@ settings:
       # https://limits.readthedocs.io/en/stable/quickstart.html#rate-limit-string-notation
       defaults: ["100/minute"]
 
+    # if using new Gateway API integration instead of ingress resources
+    # HTTP routes configuration for API access
+    httpRoutes:
+      # Enable HTTP routes for API access
+      enabled: false
+      # GatewayClass name to use
+      gatewayClassName: ""
+      # Domain name for API access
+      # Example: "bunkerweb-api.example.com"
+      serverName: ""
+      # Path for API access
+      serverPath: "/admin"
+      # Additional annotations for the Ingress resource
+      # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
+      extraAnnotations: {}
+      # Secret name containing TLS certificate
+      # Leave empty to disable HTTPS
+      tlsSecretName: ""
+
     # Ingress configuration for API access
     ingress:
       # Set to true to create an Ingress resource for the API
       enabled: false
-
       # IngressClass name to use
       ingressClassName: ""
-
       # Domain name for API access
       # Example: "bunkerweb-api.example.com"
       serverName: ""
-
       # Path for API access (usually "/")
       serverPath: "/"
-
       # Additional annotations for the Ingress resource
       # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
       extraAnnotations: {}
-
       # Secret name containing TLS certificate
       # Leave empty to disable HTTPS
       tlsSecretName: ""
@@ -1293,6 +1321,21 @@ redis:
   #   limits:
   #     cpu: "500m"
   #     memory: "1024Mi"
+
+# =============================================================================
+# GATEWAY CLASS
+# =============================================================================
+# Kubernetes GatewayClass resource for BunkerWeb
+
+gatewayClass:
+  # Create GatewayClass resource
+  enabled: true
+
+  # GatewayClass name (used in gateway resources)
+  name: "bunkerweb"
+
+  # Controller identifier for this GatewayClass
+  controller: "bunkerweb.io/gateway-controller"
 
 # =============================================================================
 # INGRESS CLASS

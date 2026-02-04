@@ -1,0 +1,30 @@
+{{- if .Values.settings.ui.httpRoutes.enabled -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ui-{{ include "bunkerweb.fullname" . }}-httproute
+  namespace: {{ include "bunkerweb.namespace" . }}
+  labels:
+    {{- include "bunkerweb.labels" . | nindent 4 }}
+  annotations:
+    bunkerweb.io/USE_TEMPLATE: "ui"
+    {{- with .Values.settings.ui.httpRoutes.extraAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  parentRefs:
+    - name: {{ include "bunkerweb.fullname" . }}-gateway
+      namespace: {{ include "bunkerweb.namespace" . }}
+  {{- if .Values.settings.ui.httpRoutes.serverName }}
+  hostnames:
+    - {{ .Values.settings.ui.httpRoutes.serverName | quote }}
+  {{- end }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.settings.ui.httpRoutes.serverPath | default "/" }}
+      backendRefs:
+        - name: ui-{{ include "bunkerweb.fullname" . }}
+          port: 7000
+{{- end }}
