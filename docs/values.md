@@ -368,6 +368,8 @@ Manages BunkerWeb configuration and coordination
 ## controller
 
 Kubernetes controller for automatic Ingress management
+The controller runs as either a `GatewayController` or an `IngressController`, never both. If both are configured, `GatewayController` takes priority.
+Gateway API support requires Kubernetes Gateway API CRDs to be installed in the cluster. See the [Gateway API install guide](https://gateway-api.sigs.k8s.io/guides/getting-started/#installing-gateway-api).
 
 | Parameter | Description | Type | Default |
 |-----------|-------------|------|---------|
@@ -693,4 +695,3 @@ Configuration for BunkerWeb behavior in Kubernetes environment
 | `settings.ui.ingress.tlsSecretName` | Secret name containing TLS certificate Leave empty to disable HTTPS | `string` | `""` |
 
 ---
-

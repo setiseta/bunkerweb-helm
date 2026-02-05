@@ -1329,7 +1329,8 @@ redis:
 
 gatewayClass:
   # Create GatewayClass resource
-  enabled: true
+  # Requires Kubernetes Gateway API CRDs to be installed in the cluster: https://gateway-api.sigs.k8s.io/guides/getting-started/#installing-gateway-api
+  enabled: false
 
   # GatewayClass name (used in gateway resources)
   name: "bunkerweb"

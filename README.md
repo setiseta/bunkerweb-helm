@@ -19,6 +19,7 @@ Official [Helm chart](https://helm.sh/docs/) to deploy [BunkerWeb](https://www.b
 - Kubernetes 1.19+
 - Helm 3.8+
 - PV provisioner support in the underlying infrastructure (for persistence)
+- Kubernetes Gateway API CRDs installed (required for Gateway API support, see the [Gateway API install guide](https://gateway-api.sigs.k8s.io/guides/getting-started/#installing-gateway-api))
 
 **Important**: Please first refer to the [BunkerWeb documentation](https://docs.bunkerweb.io/latest/?utm_campaign=self&utm_source=github), particularly the [Kubernetes integration](https://docs.bunkerweb.io/latest/integrations/?utm_campaign=self&utm_source=bunkerwebio#kubernetes) section.
 
@@ -79,6 +80,8 @@ settings:
 ```
 
 ### Kubernetes Integration
+
+**Controller selection**: The controller runs as either a `GatewayController` or an `IngressController`, never both. If both are configured, `GatewayController` takes priority.
 
 ```yaml
 settings:
