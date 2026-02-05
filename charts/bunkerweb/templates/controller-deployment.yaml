@@ -43,6 +43,8 @@ spec:
             # Mandatory for k8s integration
             - name: KUBERNETES_MODE
               value: "yes"
+            - name: KUBERNETES_REVERSE_PROXY_SUFFIX_START
+              value: 0
             {{- if .Values.gatewayClass.enabled }}
             - name: KUBERNETES_GATEWAY_MODE
               value: "yes"
