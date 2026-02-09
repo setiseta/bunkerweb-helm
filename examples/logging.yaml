@@ -1,0 +1,24 @@
+# Activate logging from all containers to be displayed in ui
+ui:
+  # Log collection configuration
+  logs:
+    # Enable log collection sidecar
+    # ONLY WORKING FROM BunkerWeb version 1.6.7 and later
+    enabled: true
+
+    # Syslog address for log forwarding
+    # Automatically set to Sidecar service if empty
+    # Format: HOST:PORT "syslog-server:514" do not append Protocol, it's set to UDP by default and port 514.
+    syslogAddress: ""
+
+    # Syslog-ng container for log collection
+    repository: docker.io/balabit/syslog-ng
+    pullPolicy: Always
+    tag: 4.8.0
+
+    # Persistent storage for logs
+    persistence:
+      size: 5Gi
+      # Storage class for log persistence
+      # Leave empty for default storage class
+      storageClass: ""

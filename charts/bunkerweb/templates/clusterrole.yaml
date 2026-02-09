@@ -14,3 +14,19 @@ rules:
   - apiGroups: ["networking.k8s.io"]
     resources: ["ingresses/status"]
     verbs: ["get", "watch", "list", "patch"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources:
+      - gatewayclasses
+      - gatewayclasses/status
+      - gateways
+      - gateways/status
+      - httproutes
+      - httproutes/status
+      - tlsroutes
+      - tlsroutes/status
+      - tcproutes
+      - tcproutes/status
+      - udproutes
+      - udproutes/status
+      - referencegrants
+    verbs: ["get", "watch", "list", "patch", "update"]
