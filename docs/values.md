@@ -62,13 +62,13 @@ Main reverse proxy and WAF component
 | `bunkerweb.podAnnotations` | Additional pod annotations | `object` | `{}` |
 | `bunkerweb.podAntiAffinityPreset` | Anti-affinity preset: "soft" or "hard" soft: Prefers not to schedule pods on same node hard: Never s... | `string` | `"soft"` |
 | `bunkerweb.podLabels` | Additional pod labels | `object` | `{}` |
-| `bunkerweb.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `bunkerweb.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `bunkerweb.readinessProbe` | Readiness probe configuration | `object` | See nested values |
 | `bunkerweb.replicas` | Number of replicas (for Deployment & StatefulSet kind) Minimum 2 for high availability and PodDisrup... | `int` | `1` |
 | `bunkerweb.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/bunkerity/bunkerweb"` |
 | `bunkerweb.securityContext` | Security context for BunkerWeb container | `object` | See nested values |
 | `bunkerweb.service` | Internal service configuration (for inter-pod communication) | `object` | See nested values |
-| `bunkerweb.tag` | Configuration for tag | `string` | `"1.6.7"` |
+| `bunkerweb.tag` | Configuration for tag | `string` | `"1.6.8"` |
 | `bunkerweb.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
 | `bunkerweb.volumeMounts` | volumes: - name: shared-data persistentVolumeClaim: claimName: shared-pvc Custom volume mounts confi... | `list` | `[]` |
 | `bunkerweb.volumes` | Custom volumes configuration Allows mounting additional volumes to the BunkerWeb container | `list` | `[]` |
@@ -125,11 +125,11 @@ Web interface for BunkerWeb management and monitoring
 | `ui.nodeSelector` | Node selector (overrides global setting) | `object` | `{}` |
 | `ui.podAnnotations` | Additional pod annotations | `object` | `{}` |
 | `ui.podLabels` | Additional pod labels | `object` | `{}` |
-| `ui.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `ui.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `ui.readinessProbe` | Readiness probe configuration | `object` | See nested values |
 | `ui.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/bunkerity/bunkerweb-ui"` |
 | `ui.securityContext` | Security context for BunkerWeb container | `object` | See nested values |
-| `ui.tag` | Configuration for tag | `string` | `"1.6.7"` |
+| `ui.tag` | Configuration for tag | `string` | `"1.6.8"` |
 | `ui.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
 | `ui.livenessProbe.exec` | Configuration for exec | `object` | See nested values |
 | `ui.livenessProbe.failureThreshold` | Configuration for failureThreshold | `int` | `3` |
@@ -137,11 +137,13 @@ Web interface for BunkerWeb management and monitoring
 | `ui.livenessProbe.periodSeconds` | Configuration for periodSeconds | `int` | `5` |
 | `ui.livenessProbe.timeoutSeconds` | Configuration for timeoutSeconds | `int` | `1` |
 | `ui.logs.enabled` | Enable HPA for bunkerweb component | `bool` | `false` |
+| `ui.logs.logrotate` | Log rotation and cleanup configuration Periodically rotates UI logs and removes old log files | `object` | See nested values |
 | `ui.logs.persistence` | Persistent storage for logs | `object` | See nested values |
-| `ui.logs.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `ui.logs.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `ui.logs.repository` | Syslog-ng container for log collection | `string` | `"docker.io/balabit/syslog-ng"` |
 | `ui.logs.syslogAddress` | Syslog address for log forwarding Automatically set to Sidecar service if empty Format: HOST:PORT "s... | `string` | `""` |
 | `ui.logs.tag` | Configuration for tag | `string` | `"4.8.0"` |
+| `ui.logs.timezone` | Timezone for the syslog-ng container If empty, uses the container default (UTC) | `string` | `""` |
 | `ui.readinessProbe.exec` | Configuration for exec | `object` | See nested values |
 | `ui.readinessProbe.failureThreshold` | Configuration for failureThreshold | `int` | `3` |
 | `ui.readinessProbe.initialDelaySeconds` | Configuration for initialDelaySeconds | `int` | `30` |
@@ -152,6 +154,10 @@ Web interface for BunkerWeb management and monitoring
 | `ui.securityContext.runAsGroup` | Configuration for runAsGroup | `int` | `101` |
 | `ui.securityContext.runAsUser` | Configuration for runAsUser | `int` | `101` |
 | `ui.livenessProbe.exec.command` | Configuration for command | `list` | `['/usr/share/bunkerweb/helpers/healthcheck-ui.sh']` |
+| `ui.logs.logrotate.enabled` | Enable HTTP routes for UI access | `bool` | `true` |
+| `ui.logs.logrotate.files` | Log file patterns to rotate (required when logrotate.enabled=true). This list is matched against log... | `list` | `['bw-autoconf.log', 'bw-scheduler.log', 'bw-ui-access.log', 'bw-ui.log']` |
+| `ui.logs.logrotate.rotate` | Number of days to keep UI log files Log files older than this value will be automatically removed | `int` | `2` |
+| `ui.logs.logrotate.schedule` | Cron schedule for the log rotation job Default: daily at 00:00 | `string` | `"0 0 * * *"` |
 | `ui.logs.persistence.size` | Configuration for size | `string` | `"5Gi"` |
 | `ui.logs.persistence.storageClass` | Storage class for log persistence Leave empty for default storage class | `string` | `""` |
 | `ui.readinessProbe.exec.command` | Configuration for command | `list` | `['/usr/share/bunkerweb/helpers/healthcheck-ui.sh']` |
@@ -174,10 +180,10 @@ Manages BunkerWeb configuration and coordination
 | `scheduler.podAnnotations` | Additional pod annotations | `object` | `{}` |
 | `scheduler.podLabels` | Additional pod labels | `object` | `{}` |
 | `scheduler.proLicenseKey` | PRO Features configuration BunkerWeb PRO license key for advanced features | `string` | `""` |
-| `scheduler.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `scheduler.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `scheduler.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/bunkerity/bunkerweb-scheduler"` |
 | `scheduler.securityContext` | Security context for BunkerWeb container | `object` | See nested values |
-| `scheduler.tag` | Configuration for tag | `string` | `"1.6.7"` |
+| `scheduler.tag` | Configuration for tag | `string` | `"1.6.8"` |
 | `scheduler.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
 | `scheduler.usePrometheusExporter` | Enable Prometheus metrics exporter and creates a service for it Requires BunkerWeb PRO license | `bool` | `false` |
 | `scheduler.features.antibot` | Configuration for antibot | `object` | See nested values |
@@ -368,8 +374,6 @@ Manages BunkerWeb configuration and coordination
 ## controller
 
 Kubernetes controller for automatic Ingress management
-The controller runs as either a `GatewayController` or an `IngressController`, never both. If both are configured, `GatewayController` takes priority.
-Gateway API support requires Kubernetes Gateway API CRDs to be installed in the cluster. See the [Gateway API install guide](https://gateway-api.sigs.k8s.io/guides/getting-started/#installing-gateway-api).
 
 | Parameter | Description | Type | Default |
 |-----------|-------------|------|---------|
@@ -381,11 +385,11 @@ Gateway API support requires Kubernetes Gateway API CRDs to be installed in the 
 | `controller.nodeSelector` | Node selector (overrides global setting) | `object` | `{}` |
 | `controller.podAnnotations` | Additional pod annotations | `object` | `{}` |
 | `controller.podLabels` | Additional pod labels | `object` | `{}` |
-| `controller.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `controller.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `controller.readinessProbe` | Readiness probe configuration | `object` | See nested values |
 | `controller.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/bunkerity/bunkerweb-autoconf"` |
 | `controller.securityContext` | Security context for BunkerWeb container | `object` | See nested values |
-| `controller.tag` | Configuration for tag | `string` | `"1.6.7"` |
+| `controller.tag` | Configuration for tag | `string` | `"1.6.8"` |
 | `controller.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
 | `controller.livenessProbe.exec` | Configuration for exec | `object` | See nested values |
 | `controller.livenessProbe.failureThreshold` | Configuration for failureThreshold | `int` | `3` |
@@ -417,10 +421,11 @@ Database backend for BunkerWeb configuration and logs
 | `mariadb.args` | Additional arguments for MariaDB | `list` | `['--max-allowed-packet=67108864']` |
 | `mariadb.config` | Database configuration | `object` | See nested values |
 | `mariadb.enabled` | Enable external service creation | `bool` | `true` |
+| `mariadb.extraEnvs` | Additional environment variables | `list` | `[]` |
 | `mariadb.imagePullSecrets` | Image pull secrets (overrides global setting) | `list` | `[]` |
 | `mariadb.nodeSelector` | Node selector (overrides global setting) | `object` | `{}` |
 | `mariadb.persistence` | Persistent storage configuration | `object` | See nested values |
-| `mariadb.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `mariadb.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `mariadb.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/mariadb"` |
 | `mariadb.tag` | Configuration for tag | `string` | `"11"` |
 | `mariadb.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
@@ -442,10 +447,11 @@ Cache and session storage for BunkerWeb
 | `redis` | Cache and session storage for BunkerWeb | `object` | See nested values |
 | `redis.config` | Database configuration | `object` | See nested values |
 | `redis.enabled` | Enable external service creation | `bool` | `true` |
+| `redis.extraEnvs` | Additional environment variables | `list` | `[]` |
 | `redis.imagePullSecrets` | Image pull secrets (overrides global setting) | `list` | `[]` |
 | `redis.nodeSelector` | Node selector (overrides global setting) | `object` | `{}` |
 | `redis.persistence` | Persistent storage configuration | `object` | See nested values |
-| `redis.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `redis.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `redis.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/redis"` |
 | `redis.tag` | Configuration for tag | `string` | `"7-alpine"` |
 | `redis.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
@@ -511,7 +517,7 @@ Metrics collection and storage
 | `prometheus.persistence` | Persistent storage configuration | `object` | See nested values |
 | `prometheus.podAnnotations` | Additional pod annotations | `object` | `{}` |
 | `prometheus.podLabels` | Additional pod labels | `object` | `{}` |
-| `prometheus.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `prometheus.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `prometheus.replicas` | Number of replicas (for Deployment & StatefulSet kind) Minimum 2 for high availability and PodDisrup... | `int` | `1` |
 | `prometheus.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/prom/prometheus"` |
 | `prometheus.securityContext` | Security context for BunkerWeb container | `object` | See nested values |
@@ -538,10 +544,10 @@ External API for BunkerWeb that exposes REST interface for automation tools
 | `api.nodeSelector` | Node selector (overrides global setting) | `object` | `{}` |
 | `api.podAnnotations` | Additional pod annotations | `object` | `{}` |
 | `api.podLabels` | Additional pod labels | `object` | `{}` |
-| `api.pullPolicy` | Configuration for pullPolicy | `string` | `"Always"` |
+| `api.pullPolicy` | Configuration for pullPolicy | `string` | `"IfNotPresent"` |
 | `api.repository` | Container image configuration Also available at ghcr.io/bunkerity/bunkerweb | `string` | `"docker.io/bunkerity/bunkerweb-api"` |
 | `api.securityContext` | Security context for BunkerWeb container | `object` | See nested values |
-| `api.tag` | Configuration for tag | `string` | `"1.6.7"` |
+| `api.tag` | Configuration for tag | `string` | `"1.6.8"` |
 | `api.tolerations` | Tolerations (overrides global setting) | `list` | `[]` |
 | `api.livenessProbe.exec` | Configuration for exec | `object` | See nested values |
 | `api.livenessProbe.failureThreshold` | Configuration for failureThreshold | `int` | `3` |
@@ -565,7 +571,7 @@ Kubernetes GatewayClass resource for BunkerWeb
 |-----------|-------------|------|---------|
 | `gatewayClass` | Kubernetes GatewayClass resource for BunkerWeb | `object` | See nested values |
 | `gatewayClass.controller` | Controller identifier for this GatewayClass | `string` | `"bunkerweb.io/gateway-controller"` |
-| `gatewayClass.enabled` | Enable external service creation | `bool` | `true` |
+| `gatewayClass.enabled` | Enable external service creation | `bool` | `false` |
 | `gatewayClass.name` | GatewayClass name (used in gateway resources) | `string` | `"bunkerweb"` |
 
 ---
@@ -695,3 +701,4 @@ Configuration for BunkerWeb behavior in Kubernetes environment
 | `settings.ui.ingress.tlsSecretName` | Secret name containing TLS certificate Leave empty to disable HTTPS | `string` | `""` |
 
 ---
+

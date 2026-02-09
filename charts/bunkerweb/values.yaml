@@ -302,7 +302,7 @@ bunkerweb:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb
   repository: docker.io/bunkerity/bunkerweb
-  tag: 1.6.7
+  tag: 1.6.8
   pullPolicy: IfNotPresent
 
   # Resource requests and limits
@@ -475,7 +475,7 @@ scheduler:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-scheduler
   repository: docker.io/bunkerity/bunkerweb-scheduler
-  tag: 1.6.7
+  tag: 1.6.8
   pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
@@ -981,7 +981,7 @@ controller:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-autoconf
   repository: docker.io/bunkerity/bunkerweb-autoconf
-  tag: 1.6.7
+  tag: 1.6.8
   pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
@@ -1053,7 +1053,7 @@ ui:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-ui
   repository: docker.io/bunkerity/bunkerweb-ui
-  tag: 1.6.7
+  tag: 1.6.8
   pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
@@ -1109,6 +1109,11 @@ ui:
     pullPolicy: IfNotPresent
     tag: 4.8.0
 
+    # Timezone for the syslog-ng container
+    # If empty, uses the container default (UTC)
+    # Example: "Europe/Paris", "America/New_York"
+    timezone: ""
+
     # Persistent storage for logs
     persistence:
       size: 5Gi
@@ -1138,10 +1143,10 @@ ui:
       #
       # If this list is empty, no logrotate rules are generated and nothing will be rotated.
       files:
-      - bw-autoconf.log
-      - bw-scheduler.log
-      - bw-ui-access.log
-      - bw-ui.log
+        - bw-autoconf.log
+        - bw-scheduler.log
+        - bw-ui-access.log
+        - bw-ui.log
       # - '*.com.log'
 
   # Liveness probe configuration
@@ -1176,7 +1181,7 @@ api:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-api
   repository: docker.io/bunkerity/bunkerweb-api
-  tag: 1.6.7
+  tag: 1.6.8
   pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
@@ -1286,6 +1291,10 @@ mariadb:
   args:
     - "--max-allowed-packet=67108864"
 
+  # Additional environment variables for MariaDB container
+  # Example: extraEnvs: [{"name": "MARIADB_AUTO_UPGRADE", "value": "1"}]
+  extraEnvs: []
+
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
   # resources:
@@ -1351,6 +1360,10 @@ redis:
       loglevel verbose
       maxmemory 512mb
       maxmemory-policy allkeys-lru
+
+  # Additional environment variables for Redis container
+  # Example: extraEnvs: [{"name": "REDIS_ARGS", "value": "--maxmemory 256mb"}]
+  extraEnvs: []
 
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
