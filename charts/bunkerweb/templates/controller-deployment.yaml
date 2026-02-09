@@ -13,6 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "bunkerweb.selectorLabels" . | nindent 6 }}
+      bunkerweb.io/component: "controller"
   template:
     metadata:
       labels:
@@ -43,6 +44,12 @@ spec:
             # Mandatory for k8s integration
             - name: KUBERNETES_MODE
               value: "yes"
+            - name: KUBERNETES_REVERSE_PROXY_SUFFIX_START
+              value: "0"
+            {{- if .Values.gatewayClass.enabled }}
+            - name: KUBERNETES_GATEWAY_MODE
+              value: "yes"
+            {{- end }}
             - name: DATABASE_URI
               {{- if not (empty .Values.settings.existingSecret) }}
               valueFrom:
@@ -60,8 +67,8 @@ spec:
               value: "{{ .Values.settings.kubernetes.domainName }}"
             - name: KUBERNETES_IGNORE_ANNOTATIONS
               value: "{{ .Values.settings.kubernetes.ignoreAnnotations }}"
-             {{- if .Values.controller.extraEnvs }}
-              {{- toYaml .Values.controller.extraEnvs | nindent 12 }}
+            {{- if .Values.controller.extraEnvs }}
+            {{- toYaml .Values.controller.extraEnvs | nindent 12 }}
             {{- end }}
             {{- if .Values.ui.logs.enabled }}
             - name: LOG_TYPES

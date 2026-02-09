@@ -13,6 +13,7 @@ spec:
   selector:
     matchLabels:
       {{- include "bunkerweb.selectorLabels" . | nindent 6 }}
+      bunkerweb.io/component: "ui"
   template:
     metadata:
       labels:
@@ -106,6 +107,19 @@ spec:
         - name: bunkerweb-syslog
           image: {{ .Values.ui.logs.repository }}:{{ .Values.ui.logs.tag }}
           imagePullPolicy: {{ .Values.ui.logs.pullPolicy }}
+          {{- $timezone := .Values.ui.logs.timezone }}
+          {{- if not $timezone }}
+            {{- range .Values.scheduler.extraEnvs }}
+              {{- if eq .name "TZ" }}
+                {{- $timezone = .value }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- if $timezone }}
+          env:
+            - name: TZ
+              value: "{{ $timezone }}"
+          {{- end }}
           securityContext:
             capabilities:
               add:

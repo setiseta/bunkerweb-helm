@@ -108,25 +108,39 @@ settings:
     # Enable the setup wizard on first launch
     wizard: true
 
+    # if using new Gateway API integration instead of ingress resources
+    # HTTP routes configuration for UI access
+    httpRoutes:
+      # Enable HTTP routes for UI access
+      enabled: false
+      # GatewayClass name to use
+      gatewayClassName: ""
+      # Domain name for UI access
+      # Example: "bunkerweb-ui.example.com"
+      serverName: ""
+      # Path for UI access
+      serverPath: "/"
+      # Additional annotations for the httpRoute resource
+      # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
+      extraAnnotations: {}
+      # Secret name containing TLS certificate
+      # Leave empty to disable HTTPS
+      tlsSecretName: ""
+
     # Ingress configuration for UI access
     ingress:
       # Set to true to create an Ingress resource for the UI
       enabled: false
-
       # IngressClass name to use
       ingressClassName: ""
-
       # Domain name for UI access
       # Example: "bunkerweb-ui.example.com"
       serverName: ""
-
       # Path for UI access (usually "/")
       serverPath: "/"
-
       # Additional annotations for the Ingress resource
       # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
       extraAnnotations: {}
-
       # Secret name containing TLS certificate
       # Leave empty to disable HTTPS
       tlsSecretName: ""
@@ -198,25 +212,39 @@ settings:
       # https://limits.readthedocs.io/en/stable/quickstart.html#rate-limit-string-notation
       defaults: ["100/minute"]
 
+    # if using new Gateway API integration instead of ingress resources
+    # HTTP routes configuration for API access
+    httpRoutes:
+      # Enable HTTP routes for API access
+      enabled: false
+      # GatewayClass name to use
+      gatewayClassName: ""
+      # Domain name for API access
+      # Example: "bunkerweb-api.example.com"
+      serverName: ""
+      # Path for API access
+      serverPath: "/admin"
+      # Additional annotations for the Ingress resource
+      # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
+      extraAnnotations: {}
+      # Secret name containing TLS certificate
+      # Leave empty to disable HTTPS
+      tlsSecretName: ""
+
     # Ingress configuration for API access
     ingress:
       # Set to true to create an Ingress resource for the API
       enabled: false
-
       # IngressClass name to use
       ingressClassName: ""
-
       # Domain name for API access
       # Example: "bunkerweb-api.example.com"
       serverName: ""
-
       # Path for API access (usually "/")
       serverPath: "/"
-
       # Additional annotations for the Ingress resource
       # Example: {"cert-manager.io/cluster-issuer": "letsencrypt-prod"}
       extraAnnotations: {}
-
       # Secret name containing TLS certificate
       # Leave empty to disable HTTPS
       tlsSecretName: ""
@@ -274,8 +302,8 @@ bunkerweb:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb
   repository: docker.io/bunkerity/bunkerweb
-  tag: 1.6.7
-  pullPolicy: Always
+  tag: 1.6.8
+  pullPolicy: IfNotPresent
 
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
@@ -447,8 +475,8 @@ scheduler:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-scheduler
   repository: docker.io/bunkerity/bunkerweb-scheduler
-  tag: 1.6.7
-  pullPolicy: Always
+  tag: 1.6.8
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -953,8 +981,8 @@ controller:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-autoconf
   repository: docker.io/bunkerity/bunkerweb-autoconf
-  tag: 1.6.7
-  pullPolicy: Always
+  tag: 1.6.8
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -1025,8 +1053,8 @@ ui:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-ui
   repository: docker.io/bunkerity/bunkerweb-ui
-  tag: 1.6.7
-  pullPolicy: Always
+  tag: 1.6.8
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -1078,8 +1106,13 @@ ui:
 
     # Syslog-ng container for log collection
     repository: docker.io/balabit/syslog-ng
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     tag: 4.8.0
+
+    # Timezone for the syslog-ng container
+    # If empty, uses the container default (UTC)
+    # Example: "Europe/Paris", "America/New_York"
+    timezone: ""
 
     # Persistent storage for logs
     persistence:
@@ -1087,6 +1120,34 @@ ui:
       # Storage class for log persistence
       # Leave empty for default storage class
       storageClass: ""
+
+    # Log rotation and cleanup configuration
+    # Periodically rotates UI logs and removes old log files
+    logrotate:
+      # Enable periodic log rotation for UI logs
+      enabled: true
+
+      # Cron schedule for the log rotation job
+      # Default: daily at 00:00
+      schedule: 0 0 * * *
+
+      # Number of days to keep UI log files
+      # Log files older than this value will be automatically removed
+      rotate: 2
+
+      # Log file patterns to rotate (required when logrotate.enabled=true).
+      #
+      # This list is matched against log file names under /var/log/bunkerweb/.
+      # You can use glob patterns:
+      #   - *.com.log
+      #
+      # If this list is empty, no logrotate rules are generated and nothing will be rotated.
+      files:
+        - bw-autoconf.log
+        - bw-scheduler.log
+        - bw-ui-access.log
+        - bw-ui.log
+      # - '*.com.log'
 
   # Liveness probe configuration
   livenessProbe:
@@ -1120,8 +1181,8 @@ api:
   # Container image configuration
   # Also available at ghcr.io/bunkerity/bunkerweb-api
   repository: docker.io/bunkerity/bunkerweb-api
-  tag: 1.6.7
-  pullPolicy: Always
+  tag: 1.6.8
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
@@ -1183,10 +1244,16 @@ mariadb:
   # Container image configuration
   repository: docker.io/mariadb
   tag: "11"
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
+
+  # Deployment update strategy for MariaDB
+  # Default: RollingUpdate
+  # Uncomment and set to "Recreate" when using single-node block storage
+  # (e.g. EBS with ReadWriteOnce) to avoid volume attach conflicts
+  # strategy: Recreate
 
   # Node selector (overrides global setting)
   nodeSelector: {}
@@ -1224,6 +1291,10 @@ mariadb:
   args:
     - "--max-allowed-packet=67108864"
 
+  # Additional environment variables for MariaDB container
+  # Example: extraEnvs: [{"name": "MARIADB_AUTO_UPGRADE", "value": "1"}]
+  extraEnvs: []
+
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
   # resources:
@@ -1247,7 +1318,7 @@ redis:
   # Container image configuration
   repository: docker.io/redis
   tag: 7-alpine
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Persistent storage configuration
   persistence:
     # Storage size for Redis data
@@ -1259,6 +1330,12 @@ redis:
 
   # Image pull secrets (overrides global setting)
   imagePullSecrets: []
+
+  # Deployment update strategy for Redis
+  # Default: RollingUpdate
+  # Uncomment and set to "Recreate" when using single-node block storage
+  # (e.g. EBS with ReadWriteOnce) to avoid volume attach conflicts
+  # strategy: Recreate
 
   # Node selector (overrides global setting)
   nodeSelector: {}
@@ -1284,6 +1361,10 @@ redis:
       maxmemory 512mb
       maxmemory-policy allkeys-lru
 
+  # Additional environment variables for Redis container
+  # Example: extraEnvs: [{"name": "REDIS_ARGS", "value": "--maxmemory 256mb"}]
+  extraEnvs: []
+
   # Resource requests and limits
   # RECOMMENDED: Uncomment and adjust for production
   # resources:
@@ -1293,6 +1374,22 @@ redis:
   #   limits:
   #     cpu: "500m"
   #     memory: "1024Mi"
+
+# =============================================================================
+# GATEWAY CLASS
+# =============================================================================
+# Kubernetes GatewayClass resource for BunkerWeb
+
+gatewayClass:
+  # Create GatewayClass resource
+  # Requires Kubernetes Gateway API CRDs to be installed in the cluster: https://gateway-api.sigs.k8s.io/guides/getting-started/#installing-gateway-api
+  enabled: false
+
+  # GatewayClass name (used in gateway resources)
+  name: "bunkerweb"
+
+  # Controller identifier for this GatewayClass
+  controller: "bunkerweb.io/gateway-controller"
 
 # =============================================================================
 # INGRESS CLASS
@@ -1321,7 +1418,7 @@ prometheus:
 
   # Container image configuration
   repository: docker.io/prom/prometheus
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   tag: v3.3.1
 
   # Number of Prometheus replicas
