@@ -1,0 +1,127 @@
+{{- if and .Values.ui.logs.enabled .Values.ui.logs.logrotate.enabled -}}
+{{- $files := default (list) .Values.ui.logs.logrotate.files -}}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ui-logrotate-{{ include "bunkerweb.fullname" . }}
+  namespace: {{ include "bunkerweb.namespace" . }}
+  labels:
+    {{- include "bunkerweb.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.ui.logs.logrotate.schedule | default "0 0 * * *" }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+        {{- if .Values.ui.nodeSelector }}
+          {{- with .Values.ui.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- else if .Values.nodeSelector }}
+          {{- with .Values.nodeSelector }}
+          nodeSelector:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+        {{- end }}
+        {{- if or (.Values.ui.tolerations) (.Values.tolerations) }}
+          tolerations:
+          {{- if .Values.ui.tolerations }}
+            {{- toYaml .Values.ui.tolerations | nindent 10 }}
+          {{- else }}
+            {{- toYaml .Values.tolerations | nindent 10 }}
+          {{- end }}
+        {{- end }}
+          affinity:
+            podAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+              - topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    {{- include "bunkerweb.labels" . | nindent 20 }}
+                    {{- with .Values.ui.podLabels }}
+                    {{- toYaml . | nindent 20 }}
+                    {{- end }}
+                    bunkerweb.io/component: "ui"
+          containers:
+          - name: logrotate
+            image: alpine:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+{{- if gt (len $files) 0 }}
+              set -ex
+              apk add --no-cache logrotate
+              echo "=== Files before logrotate ==="
+              ls -la /var/log/bunkerweb/
+              logrotate -f /etc/logrotate.d/bunkerweb
+              echo "=== Files after logrotate ==="
+              ls -la /var/log/bunkerweb/
+              echo "=== Deleting old log files ==="
+              echo "Current time: $(date)"
+              cutoff=$(date -d @$(($(date +%s) - {{ $.Values.ui.logs.logrotate.rotate | default "2" }} * 86400)) +%Y%m%d)
+              echo "Cutoff date: $cutoff (files before this will be deleted)"
+              for f in /var/log/bunkerweb/*-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].log; do
+                if [ -f "$f" ]; then
+                  datepart=$(basename "$f" | grep -oE '[0-9]{8}\.log$' | cut -d. -f1)
+                  if [ -n "$datepart" ] && [ "$datepart" -lt "$cutoff" ]; then
+                    echo "Deleting: $f (date: $datepart < $cutoff)"
+                    rm -f "$f"
+                  fi
+                fi
+              done
+              echo "=== Files after cleanup ==="
+              ls -la /var/log/bunkerweb/
+{{- else }}
+              echo "ui.logs.logrotate.files is empty; skip logrotate."
+              exit 0
+{{- end }}
+            volumeMounts:
+            - name: config
+              mountPath: /etc/logrotate.d/
+              readOnly: true
+            - name: bunkerweb-logs
+              mountPath: /var/log/bunkerweb
+          restartPolicy: OnFailure
+          volumes:
+          - name: config
+            configMap:
+              name: ui-logrotate-{{ include "bunkerweb.fullname" . }}
+          - name: bunkerweb-logs
+            persistentVolumeClaim:
+              claimName: ui-{{ include "bunkerweb.fullname" . }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ui-logrotate-{{ include "bunkerweb.fullname" . }}
+  namespace: {{ include "bunkerweb.namespace" . }}
+  labels:
+    {{- include "bunkerweb.labels" . | nindent 4 }}
+data:
+  bunkerweb: |
+    {{- if gt (len $files) 0 -}}
+    {{- range $files }}
+    /var/log/bunkerweb/{{ . }}{{- end }} {
+      daily
+      rotate {{ add (.Values.ui.logs.logrotate.rotate | default "2") 1 }}
+      dateext
+      dateformat -%Y%m%d
+      compress
+      delaycompress
+      missingok
+      notifempty
+      copytruncate
+      postrotate
+        for f in /var/log/bunkerweb/*.log-[0-9]*; do
+          if [ -f "$f" ]; then
+            new_name=$(echo "$f" | sed -E 's/^(.*)\.log-([0-9]{8})$/\1-\2.log/')
+            mv "$f" "$new_name"
+          fi
+        done
+      endscript
+    }
+    {{- end -}}
+{{- end }}

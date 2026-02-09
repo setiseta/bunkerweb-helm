@@ -1,0 +1,126 @@
+# =============================================================================
+# VECTOR HELM CHART VALUES
+# =============================================================================
+# This file contains configurable values for the Vector Helm chart,
+# used in conjunction with the BunkerWeb Helm deployment.
+#
+# For more information about Vector configuration, visit:
+# https://vector.dev/docs/
+#
+# Vector Helm charts:
+# https://github.com/vectordotdev/helm-charts
+#
+# =============================================================================
+# BUNKERWEB LOGGING WITH VECTOR
+# =============================================================================
+# This file provides an example of using Vector as a log agent to forward
+# BunkerWeb access logs to the BunkerWeb UI syslog container.
+#
+# It demonstrates how to:
+# - Collect BunkerWeb pod logs using Kubernetes log files
+# - Parse JSON-formatted access logs
+# - Filter logs by selected virtual hosts (domains)
+# - Reformat logs into a syslog-compatible format
+# - Forward logs via syslog (UDP) to the BunkerWeb UI pod
+#
+# =============================================================================
+# NOTES AND ASSUMPTIONS
+# =============================================================================
+# - This example assumes BunkerWeb access logs are emitted in JSON format
+# - Log filtering is based on the "host" field from the parsed log payload
+# - Logs are forwarded via UDP to port 514 for simplicity
+# - This setup is intended as an example and may require adjustments
+#   for production environments
+#
+# =============================================================================
+# DEPLOYMENT CONTEXT
+# =============================================================================
+# This example is designed to be used alongside the BunkerWeb Helm chart
+# and assumes that the BunkerWeb UI pod exposes a syslog listener.
+#
+# Recommended file name:
+#   examples/logging-vector-syslog.yaml
+# =============================================================================
+
+role: Agent
+
+customConfig:
+  data_dir: /vector-data-dir
+  api:
+    enabled: true
+    address: 127.0.0.1:8686
+    playground: false
+  sources:
+    bunkerweb:
+      type: kubernetes_logs
+      include_paths_glob_patterns:
+      - /var/log/pods/bunkerweb_*/**
+      max_line_bytes: 1048576
+  transforms:
+    bunkerweb_logs_remap_to_json:
+      type: remap
+      inputs:
+      - bunkerweb
+      source: |-
+        if exists(.kubernetes.pod_labels."bunkerweb.io/component") {
+          .bunkerweb_component = to_string!(.kubernetes.pod_labels."bunkerweb.io/component")
+        } else {
+          .bunkerweb_component = "unknown"
+        }
+
+        parsed = parse_json(.message) ?? {}
+        .host = parsed.host
+    bunkerweb_filter_selected_domains:
+      type: filter
+      inputs:
+      - bunkerweb_logs_remap_to_json
+      condition: >-
+        .host == "foo.example.com" ||
+        .host == "bar.example.com"
+    bunkerweb_format_syslog:
+      type: remap
+      inputs:
+      - bunkerweb_filter_selected_domains
+      source: |
+        parsed = parse_json(.message) ?? {}
+
+        host = parsed.host
+        ip = parsed.ip
+        user1 = parsed.remote_user
+        user2 = "-"
+        ts = parsed.time
+        request = parsed.request
+
+        status, _ = to_string(parsed.status)
+        body_bytes, _ = to_string(parsed.body_bytes)
+
+        referer = parsed.http_referer
+        agent = parsed.ua
+
+        .message, _ = host + " " + ip + " " + user1 + " " + user2 + " [" + ts + "] \"" + request + "\" " + status + " " + body_bytes + " \"" + referer + "\" \"" + agent + "\""
+
+  sinks:
+    stdout:
+      type: console
+      inputs:
+      - bunkerweb_filter_selected_domains
+      encoding:
+        codec: text
+    socket:
+      type: socket
+      inputs:
+      - bunkerweb_format_syslog
+      address: ui-bunkerweb.bunkerweb:514
+      mode: udp
+      encoding:
+        codec: text
+    # loki:
+    #   type: loki
+    #   inputs:
+    #   - bunkerweb_logs_remap_to_json
+    #   endpoint: https://loki.example.com
+    #   labels:
+    #     namespace: '{{"{{ kubernetes.pod_namespace }}"}}'
+    #     bunkerweb_component: '{{ "{{ bunkerweb_component }}" }}'
+    #   encoding:
+    #     codec: text

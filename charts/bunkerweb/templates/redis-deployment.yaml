@@ -10,6 +10,9 @@ spec:
   selector:
     matchLabels:
       {{- include "bunkerweb.selectorLabels" . | nindent 6 }}
+      bunkerweb.io/component: "redis"
+  strategy:
+    type: {{ default "RollingUpdate" .Values.redis.strategy }}
   template:
     metadata:
       labels:
@@ -34,6 +37,9 @@ spec:
               {{- else }}
               value: "{{ .Values.redis.config.password }}"
               {{- end }}
+          {{- if .Values.redis.extraEnvs }}
+            {{- toYaml .Values.redis.extraEnvs | nindent 12 }}
+          {{- end }}
           {{- with .Values.redis.resources }}
           resources:
             {{- toYaml . | nindent 12}}
